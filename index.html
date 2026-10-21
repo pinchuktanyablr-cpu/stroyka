@@ -45,11 +45,11 @@ body.cinema #hud,body.cinema #hint{opacity:0;pointer-events:none}
 <div id="hud">
   <div id="panel" class="glass">
     <div class="ttl">СТРОЙКА</div>
-    <div class="sub">твоя трёшка · Минск · день 9</div>
+    <div class="sub" id="subline">твоя трёшка · Минск</div>
     <div class="big"><span id="num">$0</span></div>
-    <div class="of">из $42 000 на взнос · сдача: лето 2028</div>
+    <div class="of" id="ofline">из $42 000 на взнос</div>
     <div id="bar"><div id="barfill"></div></div>
-    <div class="pct" id="pctline">к полной цели $140 000: 9.3% · серия 9 дней · 460 кирпичей</div>
+    <div class="pct" id="pctline"></div>
   </div>
   <div id="chips">
     <div class="chip glass" id="c-story">▶️ Моя история</div>
@@ -75,9 +75,16 @@ if(TG){TG.ready();TG.expand();
 const IS_TOUCH=matchMedia('(pointer:coarse)').matches;
 if(IS_TOUCH){const h=document.getElementById('hint');if(h)h.style.display='none'}
 function haptic(style){try{TG&&TG.HapticFeedback&&TG.HapticFeedback.impactOccurred(style||'light')}catch(e){}}
-// ── реальные данные Тани (из дневника) ──
-const D={fund:13000,milestone:42000,target:140000,days_ok:2,streak:9,workers:4,
-  eta:"лето 2028",season:"autumn",bricks:460,site_days:9,cement:{level:.76,flag:.65}};
+// ── данные: приватно из #hash (бот вшивает их в кнопку меню), в публичной версии — демо ──
+let D={fund:0,milestone:42000,target:140000,days_ok:0,streak:0,workers:1,
+  eta:"впереди",season:"autumn",bricks:0,site_days:0,cement:{level:1,flag:1}};
+try{
+  const h=location.hash.slice(1);
+  if(h.startsWith('d=')){
+    const raw=atob(h.slice(2).replace(/-/g,'+').replace(/_/g,'/'));
+    D=Object.assign(D,JSON.parse(decodeURIComponent(escape(raw))));
+  }
+}catch(e){}
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 let W=0,H=0,DPR=1,SC=1,OX=0,OY=0;
@@ -904,6 +911,10 @@ requestAnimationFrame(loop);
 // ── HUD ──
 function toast(txt){const el=document.getElementById('toast');el.textContent=txt;
   el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),2600)}
+// подписи панели из данных
+document.getElementById('subline').textContent='твоя трёшка · Минск'+(D.site_days?' · день '+D.site_days:'');
+document.getElementById('ofline').textContent='из $'+D.milestone.toLocaleString('ru-RU')+' на взнос · сдача: '+D.eta;
+document.getElementById('pctline').textContent='к полной цели $'+D.target.toLocaleString('ru-RU')+': '+(100*D.fund/D.target).toFixed(1)+'%'+(D.streak?' · серия '+D.streak+' дн.':'')+(D.bricks?' · '+D.bricks+' кирпичей':'');
 // count-up
 (function(){const el=document.getElementById('num');const target=D.fund;const t1=performance.now();
   (function step(n){const k=Math.min(1,(n-t1)/1600);const v=Math.round(target*(1-Math.pow(1-k,3)));
